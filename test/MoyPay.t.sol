@@ -30,7 +30,12 @@ contract MoyPayTest is Test {
         mockUSDC = new MockUSDC();
         factory = new Factory();
         earnStandard = new EarnStandard();
-        mockVault = new MockVault();
+        mockVault = new MockVault("MORPHO");
+        mockVault = new MockVault("COMPOUND");
+        mockVault = new MockVault("CENTUARI");
+        mockVault = new MockVault("TUMBUH");
+        mockVault = new MockVault("CAER");
+        mockVault = new MockVault("AAVE");
         organization = new Organization(address(mockUSDC), address(factory), owner);
 
         factory.addEarnProtocol(address(mockVault));
@@ -167,15 +172,35 @@ contract MoyPayTest is Test {
         console.log("balance of vault", IERC20(address(mockUSDC)).balanceOf(address(mockVault)));
         console.log("balance of employee", IERC20(address(mockUSDC)).balanceOf(employee));
         vm.stopPrank();
+    }
+
+    // RUN
+    // forge test -vvv --match-test test_withdrawEarn
+    function test_withdrawEarn() public {
+        helper_createOrganization();
+        helper_deposit(10_000e6);
+        helper_setPeriodTime(30 days);
+        helper_setEmployeeSalary(1000e6);
+        helper_earn(1000e6, 30 days);
+
+        vm.startPrank(boss);
+        IERC20(address(mockUSDC)).approve(address(mockVault), 1000e6);
+        IMockVault(address(mockVault)).distributeReward(address(mockUSDC), 1000e6);
+        vm.stopPrank();
+
+        console.log("balance of vault", IERC20(address(mockUSDC)).balanceOf(address(mockVault)));
+        console.log("balance of employee", IERC20(address(mockUSDC)).balanceOf(employee));
 
         console.log("***********************");
         console.log("***********************");
 
-        // TODO: withdraw all shares via Organization, 1. manage to org pool, 2. direct withdraw to wallet
+        address org = factory.organizations(boss, 0);
+        console.log("balance of vault before", IERC20(address(mockUSDC)).balanceOf(address(mockVault)));
         console.log("balance of employee before", IERC20(address(mockUSDC)).balanceOf(employee));
         vm.startPrank(employee);
-        IMockVault(address(mockVault)).withdraw(address(mockUSDC), 1000e6, employee);
+        IOrganization(org).withdrawEarn(address(mockVault), 1000e6);
         vm.stopPrank();
+        console.log("balance of vault after", IERC20(address(mockUSDC)).balanceOf(address(mockVault)));
         console.log("balance of employee after", IERC20(address(mockUSDC)).balanceOf(employee));
     }
 }

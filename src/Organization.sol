@@ -10,12 +10,22 @@ import {IFactory} from "./intefaces/IFactory.sol";
 contract Organization is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
+    // Events
+    event EmployeeSalarySet(address indexed employee, uint256 salary, uint256 timestamp);
+    event EmployeeStatusChanged(address indexed employee, bool status);
+    event PeriodTimeSet(uint256 periodTime);
+    event Deposit(address indexed owner, uint256 amount);
+    event Withdraw(address indexed employee, uint256 amount);
+    event WithdrawAll(address indexed employee, uint256 amount);
+    event EarnSalary(address indexed employee, address indexed protocol, uint256 amount, uint256 shares);
+
     error NotOwner();
     error TransferFailed();
     error DepositRequired();
     error InsufficientSalary();
     error EmployeeNotActive();
     error EarnProtocolNotGranted();
+    error InsufficientShares();
 
     struct Employees {
         uint256 salary;
@@ -56,22 +66,33 @@ contract Organization is ReentrancyGuard {
         if (IERC20(token).balanceOf(address(this)) == 0) revert DepositRequired();
         employeeSalary[_employee] = Employees({salary: _salary, createdAt: block.timestamp, status: true});
         employees.push(_employee);
+        emit EmployeeSalarySet(_employee, _salary, block.timestamp);
     }
 
     function setEmployeeStatus(address _employee, bool _status) public onlyOwner {
         if (!employeeSalary[_employee].status) revert EmployeeNotActive();
         employeeSalary[_employee].status = _status;
         if (_currentSalary() > IERC20(token).balanceOf(address(this))) revert InsufficientSalary();
-        if (!_status) IERC20(token).safeTransfer(msg.sender, _currentSalary());
+        if (!_status) {
+            IERC20(token).safeTransfer(_employee, _currentSalary());
+            for (uint256 i = 0; i < userEarn[_employee].length; i++) {
+                if (userEarn[_employee][i].shares > 0) {
+                    withdrawEarn(userEarn[_employee][i].protocol, userEarn[_employee][i].shares);
+                }
+            }
+        }
+        emit EmployeeStatusChanged(_employee, _status);
     }
 
     function setPeriodTime(uint256 _periodTime) public onlyOwner {
         periodTime = _periodTime;
+        emit PeriodTimeSet(_periodTime);
     }
 
     // ******************* DISTRIBUTE SALARY
     function deposit(uint256 amount) public onlyOwner nonReentrant {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        emit Deposit(msg.sender, amount);
     }
 
     function withdraw(uint256 amount) public nonReentrant {
@@ -81,6 +102,7 @@ contract Organization is ReentrancyGuard {
         employeeSalary[msg.sender].createdAt = block.timestamp;
         if (realizedSalary < amount) revert InsufficientSalary();
         IERC20(token).safeTransfer(msg.sender, amount);
+        emit Withdraw(msg.sender, amount);
     }
 
     function withdrawAll() public nonReentrant {
@@ -89,6 +111,7 @@ contract Organization is ReentrancyGuard {
         uint256 realizedSalary = _currentSalary();
         employeeSalary[msg.sender].createdAt = block.timestamp;
         IERC20(token).safeTransfer(msg.sender, realizedSalary);
+        emit WithdrawAll(msg.sender, realizedSalary);
     }
 
     function _currentSalary() internal view returns (uint256) {
@@ -110,10 +133,28 @@ contract Organization is ReentrancyGuard {
         for (uint256 i = 0; i < userEarn[msg.sender].length; i++) {
             if (userEarn[msg.sender][i].protocol == _protocol) {
                 userEarn[msg.sender][i].shares += shares;
+                emit EarnSalary(msg.sender, _protocol, _amount, shares);
                 return shares;
             }
         }
         userEarn[msg.sender].push(Earn({protocol: _protocol, shares: shares}));
+        emit EarnSalary(msg.sender, _protocol, _amount, shares);
         return shares;
+    }
+
+    function withdrawEarn(address _protocol, uint256 _shares) public nonReentrant {
+        if (!IFactory(factory).isEarnProtocol(_protocol)) revert EarnProtocolNotGranted();
+        if (!employeeSalary[msg.sender].status) revert EmployeeNotActive();
+        for (uint256 i = 0; i < userEarn[msg.sender].length; i++) {
+            if (userEarn[msg.sender][i].protocol == _protocol) {
+                if (userEarn[msg.sender][i].shares < _shares) revert InsufficientShares();
+                userEarn[msg.sender][i].shares -= _shares;
+            }
+        }
+        address earnStandard = IFactory(factory).earnStandard();
+        uint256 amount = IEarnStandard(earnStandard).withdrawEarn(_protocol, token, msg.sender, _shares);
+
+        IERC20(token).safeTransfer(msg.sender, amount);
+        emit Withdraw(msg.sender, amount);
     }
 }

@@ -6,4 +6,7 @@ libs = ["lib"]
 [profile.RPC_URL]
 arb_sepolia = "https://sepolia-rollup.arbitrum.io/rpc"
 
+[lint]
+exclude_lints = ["mixed-case-variable", "mixed-case-function"]
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

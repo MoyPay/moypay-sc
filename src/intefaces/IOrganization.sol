@@ -18,4 +18,5 @@ interface IOrganization {
     function withdraw(uint256 amount) external;
     function withdrawAll() external;
     function earn(address _protocol, uint256 _amount) external returns (uint256);
+    function withdrawEarn(address _protocol, uint256 _shares) external;
 }
