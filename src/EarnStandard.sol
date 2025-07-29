@@ -6,7 +6,7 @@ import {ReentrancyGuard} from "@openzeppelin-contracts/contracts/utils/Reentranc
 import {SafeERC20} from "@openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IMockVault} from "./intefaces/IMockVault.sol";
 
-contract EarnProtocol is ReentrancyGuard {
+contract EarnStandard is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     address public owner;
@@ -20,12 +20,12 @@ contract EarnProtocol is ReentrancyGuard {
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
 
         IERC20(_token).approve(_protocol, _amount);
-        uint256 shares = IMockVault(_protocol).deposit(_amount, _user);
+        uint256 shares = IMockVault(_protocol).deposit(_token, _amount, _user);
         return shares;
     }
 
-    function withdrawEarn(address _protocol, address _user, uint256 _amount) public nonReentrant returns (uint256) {
-        uint256 shares = IMockVault(_protocol).withdraw(_amount, _user);
+    function withdrawEarn(address _protocol, address _token, address _user, uint256 _amount) public nonReentrant returns (uint256) {
+        uint256 shares = IMockVault(_protocol).withdraw(_token, _amount, _user);
         return shares;
     }
 }

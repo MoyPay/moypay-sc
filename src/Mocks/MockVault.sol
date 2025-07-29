@@ -9,23 +9,38 @@ contract MockVault is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     address public owner;
-    address public token;
 
-    mapping(address => uint256) public shares;
+    mapping(address => uint256) public userShares;
+    mapping(address => uint256) public totalShares; // token => totalShares
 
     constructor() {
         owner = msg.sender;
     }
 
-    function deposit(uint256 _amount, address _user) public nonReentrant returns (uint256) {
-        IERC20(token).transferFrom(msg.sender, address(this), _amount);
-        shares[_user] += _amount;
-        return shares[_user];
+    function deposit(address _token, uint256 _amount, address _user) public nonReentrant returns (uint256) {
+        uint256 totalSupplyAssets = IERC20(_token).balanceOf(address(this));
+        uint256 shares = 0;
+        if (totalSupplyAssets == 0) {
+            shares += _amount;
+        } else {
+            shares = (_amount * totalShares[_token]) / totalSupplyAssets;
+        }
+        userShares[_user] += shares;
+        totalShares[_token] += shares;
+        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+        return shares;
     }
 
-    function withdraw(uint256 _shares, address _user) public nonReentrant returns (uint256) {
-        IERC20(token).transfer(msg.sender, _shares);
-        shares[_user] -= _shares;
-        return shares[_user]; // return shares
+    function withdraw(address _token, uint256 _shares, address _user) public nonReentrant returns (uint256) {
+        uint256 totalSupplyAssets = IERC20(_token).balanceOf(address(this));
+        uint256 amount = (_shares * totalSupplyAssets) / totalShares[_token];
+        IERC20(_token).safeTransfer(msg.sender, amount);
+        userShares[_user] -= _shares;
+        totalShares[_token] -= _shares;
+        return userShares[_user]; // return shares
+    }
+
+    function distributeReward(address _token, uint256 _amount) public nonReentrant {
+        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
     }
 }

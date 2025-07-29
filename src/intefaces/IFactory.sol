@@ -6,5 +6,7 @@ interface IFactory {
     function createOrganization(address _token) external;
     function addEarnProtocol(address _earnProtocol) external;
     function removeEarnProtocol(address _earnProtocol) external;
-    function setEarn(address _earn) external;
+    function setEarnStandard(address _earnStandard) external;
+
+    function earnStandard() external view returns (address);
 }

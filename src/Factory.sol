@@ -6,7 +6,7 @@ import {Organization} from "./Organization.sol";
 contract Factory {
     address public owner;
     mapping(address => address[]) public organizations;
-    address public earn;
+    address public earnStandard;
     address[] public earnProtocol;
     mapping(address => bool) public isEarnProtocol;
 
@@ -15,7 +15,7 @@ contract Factory {
     }
 
     function createOrganization(address _token) public {
-        Organization organization = new Organization(_token, address(this));
+        Organization organization = new Organization(_token, address(this), msg.sender);
         organizations[msg.sender].push(address(organization));
     }
 
@@ -35,7 +35,7 @@ contract Factory {
         }
     }
 
-    function setEarn(address _earn) public {
-        earn = _earn;
+    function setEarnStandard(address _earnStandard) public {
+        earnStandard = _earnStandard;
     }
 }
