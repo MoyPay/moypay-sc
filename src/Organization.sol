@@ -6,6 +6,7 @@ import {ReentrancyGuard} from "@openzeppelin-contracts/contracts/utils/Reentranc
 import {SafeERC20} from "@openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IEarnStandard} from "./intefaces/IEarnStandard.sol";
 import {IFactory} from "./intefaces/IFactory.sol";
+import {IBurn} from "./intefaces/IBurn.sol";
 
 contract Organization is ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -15,8 +16,8 @@ contract Organization is ReentrancyGuard {
     event EmployeeStatusChanged(address indexed employee, bool status);
     event PeriodTimeSet(uint256 periodTime);
     event Deposit(address indexed owner, uint256 amount);
-    event Withdraw(address indexed employee, uint256 amount);
-    event WithdrawAll(address indexed employee, uint256 amount);
+    event Withdraw(address indexed employee, uint256 amount, bool isOfframp);
+    event WithdrawAll(address indexed employee, uint256 amount, bool isOfframp);
     event EarnSalary(address indexed employee, address indexed protocol, uint256 amount, uint256 shares);
 
     error NotOwner();
@@ -77,7 +78,7 @@ contract Organization is ReentrancyGuard {
             IERC20(token).safeTransfer(_employee, _currentSalary());
             for (uint256 i = 0; i < userEarn[_employee].length; i++) {
                 if (userEarn[_employee][i].shares > 0) {
-                    withdrawEarn(userEarn[_employee][i].protocol, userEarn[_employee][i].shares);
+                    withdrawEarn(userEarn[_employee][i].protocol, userEarn[_employee][i].shares, false);
                 }
             }
         }
@@ -95,23 +96,31 @@ contract Organization is ReentrancyGuard {
         emit Deposit(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount) public nonReentrant {
+    function withdraw(uint256 amount, bool isOfframp) public nonReentrant {
         if (IERC20(token).balanceOf(address(this)) == 0) revert DepositRequired();
         if (!employeeSalary[msg.sender].status) revert EmployeeNotActive();
         uint256 realizedSalary = _currentSalary();
         employeeSalary[msg.sender].createdAt = block.timestamp;
         if (realizedSalary < amount) revert InsufficientSalary();
-        IERC20(token).safeTransfer(msg.sender, amount);
-        emit Withdraw(msg.sender, amount);
+        if (isOfframp) {
+            IBurn(token).burn(msg.sender, amount);
+        } else {
+            IERC20(token).safeTransfer(msg.sender, amount);
+        }
+        emit Withdraw(msg.sender, amount, isOfframp);
     }
 
-    function withdrawAll() public nonReentrant {
+    function withdrawAll(bool isOfframp) public nonReentrant {
         if (IERC20(token).balanceOf(address(this)) == 0) revert DepositRequired();
         if (!employeeSalary[msg.sender].status) revert EmployeeNotActive();
         uint256 realizedSalary = _currentSalary();
         employeeSalary[msg.sender].createdAt = block.timestamp;
-        IERC20(token).safeTransfer(msg.sender, realizedSalary);
-        emit WithdrawAll(msg.sender, realizedSalary);
+        if (isOfframp) {
+            IBurn(token).burn(msg.sender, realizedSalary);
+        } else {
+            IERC20(token).safeTransfer(msg.sender, realizedSalary);
+        }
+        emit WithdrawAll(msg.sender, realizedSalary, isOfframp);
     }
 
     function _currentSalary() internal view returns (uint256) {
@@ -142,7 +151,7 @@ contract Organization is ReentrancyGuard {
         return shares;
     }
 
-    function withdrawEarn(address _protocol, uint256 _shares) public nonReentrant {
+    function withdrawEarn(address _protocol, uint256 _shares, bool isOfframp) public nonReentrant {
         if (!IFactory(factory).isEarnProtocol(_protocol)) revert EarnProtocolNotGranted();
         if (!employeeSalary[msg.sender].status) revert EmployeeNotActive();
         for (uint256 i = 0; i < userEarn[msg.sender].length; i++) {
@@ -154,7 +163,11 @@ contract Organization is ReentrancyGuard {
         address earnStandard = IFactory(factory).earnStandard();
         uint256 amount = IEarnStandard(earnStandard).withdrawEarn(_protocol, token, msg.sender, _shares);
 
-        IERC20(token).safeTransfer(msg.sender, amount);
-        emit Withdraw(msg.sender, amount);
+        if (isOfframp) {
+            IBurn(token).burn(msg.sender, amount);
+        } else {
+            IERC20(token).safeTransfer(msg.sender, amount);
+        }
+        emit Withdraw(msg.sender, amount, isOfframp);
     }
 }

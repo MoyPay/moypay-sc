@@ -115,7 +115,7 @@ contract MoyPayTest is Test {
 
         vm.startPrank(employee);
         console.log("balance before", IERC20(address(mockUSDC)).balanceOf(employee));
-        IOrganization(org).withdrawAll();
+        IOrganization(org).withdrawAll(false);
         console.log("balance after", IERC20(address(mockUSDC)).balanceOf(employee));
         vm.stopPrank();
     }
@@ -132,7 +132,7 @@ contract MoyPayTest is Test {
         vm.startPrank(employee);
         console.log("balance before", IERC20(address(mockUSDC)).balanceOf(employee));
         vm.warp(block.timestamp + 30 days);
-        IOrganization(org).withdraw(1000e6);
+        IOrganization(org).withdraw(1000e6, false);
         console.log("balance after", IERC20(address(mockUSDC)).balanceOf(employee));
         vm.stopPrank();
     }
@@ -198,7 +198,10 @@ contract MoyPayTest is Test {
         console.log("balance of vault before", IERC20(address(mockUSDC)).balanceOf(address(mockVault)));
         console.log("balance of employee before", IERC20(address(mockUSDC)).balanceOf(employee));
         vm.startPrank(employee);
-        IOrganization(org).withdrawEarn(address(mockVault), 1000e6);
+        // IOrganization(org).withdrawEarn(address(mockVault), 1e6, false);
+        (address protocol, uint256 shares) = IOrganization(org).userEarn(employee, 0);
+        console.log("protocol", protocol);
+        console.log("shares", shares);
         vm.stopPrank();
         console.log("balance of vault after", IERC20(address(mockUSDC)).balanceOf(address(mockVault)));
         console.log("balance of employee after", IERC20(address(mockUSDC)).balanceOf(employee));

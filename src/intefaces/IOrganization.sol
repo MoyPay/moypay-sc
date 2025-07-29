@@ -15,8 +15,8 @@ interface IOrganization {
     function setEmployeeStatus(address _employee, bool _status) external;
     function setPeriodTime(uint256 _periodTime) external;
     function deposit(uint256 amount) external;
-    function withdraw(uint256 amount) external;
-    function withdrawAll() external;
+    function withdraw(uint256 amount, bool isOfframp) external;
+    function withdrawAll(bool isOfframp) external;
     function earn(address _protocol, uint256 _amount) external returns (uint256);
-    function withdrawEarn(address _protocol, uint256 _shares) external;
+    function withdrawEarn(address _protocol, uint256 _shares, bool isOfframp) external;
 }
