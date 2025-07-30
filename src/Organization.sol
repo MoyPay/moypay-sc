@@ -46,12 +46,15 @@ contract Organization is ReentrancyGuard {
     mapping(address => Employees) public employeeSalary;
     mapping(address => Earn[]) public userEarn;
 
-    uint256 public periodTime; // block.timestamp == (Yearly || Monthly || Weekly || Daily)
+    uint256 public periodTime = 30 days; // block.timestamp == (Yearly || Monthly || Weekly || Daily)
 
-    constructor(address _token, address _factory, address _owner) {
+    string public name;
+
+    constructor(address _token, address _factory, address _owner, string memory _name) {
         token = _token;
         factory = _factory;
         owner = _owner;
+        name = _name;
     }
 
     modifier onlyOwner() {

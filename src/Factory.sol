@@ -20,8 +20,8 @@ contract Factory {
         owner = msg.sender;
     }
 
-    function createOrganization(address _token) public returns (address) {
-        Organization organization = new Organization(_token, address(this), msg.sender);
+    function createOrganization(address _token, string memory _name) public returns (address) {
+        Organization organization = new Organization(_token, address(this), msg.sender, _name);
         organizations[msg.sender].push(address(organization));
         emit OrganizationCreated(msg.sender, address(organization), _token);
         return address(organization);

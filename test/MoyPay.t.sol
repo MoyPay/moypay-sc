@@ -36,7 +36,7 @@ contract MoyPayTest is Test {
         mockVault = new MockVault("TUMBUH");
         mockVault = new MockVault("CAER");
         mockVault = new MockVault("AAVE");
-        organization = new Organization(address(mockUSDC), address(factory), owner);
+        organization = new Organization(address(mockUSDC), address(factory), owner, "MoyPay");
 
         factory.addEarnProtocol(address(mockVault));
         factory.setEarnStandard(address(earnStandard));
@@ -49,7 +49,7 @@ contract MoyPayTest is Test {
 
     function helper_createOrganization() public {
         vm.startPrank(boss);
-        factory.createOrganization(address(mockUSDC));
+        factory.createOrganization(address(mockUSDC), "MoyPay");
         vm.stopPrank();
     }
 

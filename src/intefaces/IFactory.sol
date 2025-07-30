@@ -6,7 +6,7 @@ interface IFactory {
     function earnStandard() external view returns (address);
     //** WRITE */
     function isEarnProtocol(address _earnProtocol) external view returns (bool);
-    function createOrganization(address _token) external returns (address);
+    function createOrganization(address _token, string memory _name) external returns (address);
     function addEarnProtocol(address _earnProtocol) external;
     function removeEarnProtocol(address _earnProtocol) external;
     function setEarnStandard(address _earnStandard) external;

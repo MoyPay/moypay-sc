@@ -28,7 +28,7 @@ contract MoyPayScript is Script {
         factory = new Factory();
         console.log("export const factory = ", address(factory));
 
-        organization = new Organization(address(mockUSDC), address(factory), vm.envAddress("ADDRESS"));
+        organization = new Organization(address(mockUSDC), address(factory), vm.envAddress("ADDRESS"), "MoyPay");
         console.log("export const organization = ", address(organization));
 
         earnStandard = new EarnStandard();
