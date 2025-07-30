@@ -12,13 +12,14 @@ contract Organization is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // Events
-    event EmployeeSalarySet(address indexed employee, uint256 salary, uint256 timestamp);
+    event EmployeeSalarySet(string name, address indexed employee, uint256 salary, uint256 timestamp);
     event EmployeeStatusChanged(address indexed employee, bool status);
     event PeriodTimeSet(uint256 periodTime);
     event Deposit(address indexed owner, uint256 amount);
     event Withdraw(address indexed employee, uint256 amount, bool isOfframp);
     event WithdrawAll(address indexed employee, uint256 amount, bool isOfframp);
     event EarnSalary(address indexed employee, address indexed protocol, uint256 amount, uint256 shares);
+    event SetName(string name);
 
     error NotOwner();
     error TransferFailed();
@@ -29,6 +30,7 @@ contract Organization is ReentrancyGuard {
     error InsufficientShares();
 
     struct Employees {
+        string name;
         uint256 salary;
         uint256 createdAt;
         bool status;
@@ -66,11 +68,11 @@ contract Organization is ReentrancyGuard {
         if (msg.sender != owner) revert NotOwner();
     }
 
-    function setEmployeeSalary(address _employee, uint256 _salary) public onlyOwner {
+    function setEmployeeSalary(string memory _name, address _employee, uint256 _salary) public onlyOwner {
         if (IERC20(token).balanceOf(address(this)) == 0) revert DepositRequired();
-        employeeSalary[_employee] = Employees({salary: _salary, createdAt: block.timestamp, status: true});
+        employeeSalary[_employee] = Employees({name: _name, salary: _salary, createdAt: block.timestamp, status: true});
         employees.push(_employee);
-        emit EmployeeSalarySet(_employee, _salary, block.timestamp);
+        emit EmployeeSalarySet(_name, _employee, _salary, block.timestamp);
     }
 
     function setEmployeeStatus(address _employee, bool _status) public onlyOwner {
@@ -91,6 +93,11 @@ contract Organization is ReentrancyGuard {
     function setPeriodTime(uint256 _periodTime) public onlyOwner {
         periodTime = _periodTime;
         emit PeriodTimeSet(_periodTime);
+    }
+
+    function setName(string memory _name) public onlyOwner {
+        name = _name;
+        emit SetName(_name);
     }
 
     // ******************* DISTRIBUTE SALARY

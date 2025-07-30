@@ -13,6 +13,7 @@ contract MockVault is ReentrancyGuard {
     event Deposit(address indexed user, address indexed token, uint256 amount, uint256 shares);
     event Withdraw(address indexed user, address indexed token, uint256 shares, uint256 amount);
     event RewardDistributed(address indexed token, uint256 amount);
+    event SetVaultName(string name);
 
     error InsufficientShares();
     error InvalidAmount();
@@ -26,7 +27,7 @@ contract MockVault is ReentrancyGuard {
 
     constructor(string memory _name) {
         owner = msg.sender;
-        name = _name;
+        setName(_name);
     }
 
     function deposit(address _token, uint256 _amount, address _user) public nonReentrant returns (uint256) {
@@ -68,5 +69,10 @@ contract MockVault is ReentrancyGuard {
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         IMint(_token).mint(address(this), _amount * 1 / 100);
         emit RewardDistributed(_token, _amount);
+    }
+
+    function setName(string memory _name) public {
+        name = _name;
+        emit SetVaultName(_name);
     }
 }

@@ -64,7 +64,7 @@ contract MoyPayTest is Test {
     function helper_setEmployeeSalary(uint256 _salary) public {
         vm.startPrank(boss);
         address org = factory.organizations(boss, 0);
-        IOrganization(org).setEmployeeSalary(employee, _salary);
+        IOrganization(org).setEmployeeSalary("Jadifa" ,employee, _salary);
         vm.stopPrank();
     }
 
