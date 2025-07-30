@@ -5,7 +5,7 @@ import {Organization} from "./Organization.sol";
 
 contract Factory {
     // Events
-    event OrganizationCreated(address indexed owner, address indexed organization, address token);
+    event OrganizationCreated(address indexed owner, address indexed organization, address token, string name);
     event EarnProtocolAdded(address indexed earnProtocol);
     event EarnProtocolRemoved(address indexed earnProtocol);
     event EarnStandardSet(address indexed earnStandard);
@@ -23,7 +23,7 @@ contract Factory {
     function createOrganization(address _token, string memory _name) public returns (address) {
         Organization organization = new Organization(_token, address(this), msg.sender, _name);
         organizations[msg.sender].push(address(organization));
-        emit OrganizationCreated(msg.sender, address(organization), _token);
+        emit OrganizationCreated(msg.sender, address(organization), _token, _name);
         return address(organization);
     }
 
