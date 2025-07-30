@@ -301,23 +301,3 @@ contract Organization is ReentrancyGuard {
         emit Withdraw(_user, amount, isOfframp, employeeSalary[_user].startStream);
     }
 }
-
-// setEmployee
-
-// gaji awal 1000
-// sekarang 15000 => 500
-// wd
-// set gaji 500
-// sekarang 15000 => 250
-
-// startstream
-
-// bikin skenario gaji 3000, earn 1000, wd 3000 (harusnya error)
-// bikin skenario gaji 3000, earn 1000, wd 2000 (yang bener)
-
-// unpaid fee
-// gas fee
-
-// auto earn
-
-// gass limit

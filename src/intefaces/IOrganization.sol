@@ -6,9 +6,10 @@ interface IOrganization {
     function owner() external view returns (address);
     function token() external view returns (address);
     function factory() external view returns (address);
+    function name() external view returns (string memory);
     function periodTime() external view returns (uint256);
     function employees(uint256 index) external view returns (address);
-    function employeeSalary(address _employee) external view returns (string memory, uint256, uint256, uint256, bool);
+    function employeeSalary(address _employee) external view returns (string memory, uint256, uint256, uint256, uint256, bool);
     function userEarn(address _user, uint256 index) external view returns (address, uint256);
     //** WRITE */
     function addEmployee(string memory _name, address _employee, uint256 _salary, uint256 _startStream, bool isNow)
