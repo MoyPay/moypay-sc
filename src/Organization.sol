@@ -206,10 +206,11 @@ contract Organization is ReentrancyGuard {
         if (realizedSalary < amount) revert InsufficientSalary();
         //******************/
 
+        employeeSalary[msg.sender].unrealizedSalary = (realizedSalary - amount);
+
         if (isOfframp) {
             IBurn(token).burn(msg.sender, amount);
         } else {
-            employeeSalary[msg.sender].unrealizedSalary += (realizedSalary - amount);
             IERC20(token).safeTransfer(msg.sender, amount);
         }
         emit Withdraw(
@@ -228,7 +229,10 @@ contract Organization is ReentrancyGuard {
         //******************/
 
         uint256 realizedSalary = _currentSalary(msg.sender);
+
         employeeSalary[msg.sender].startStream = block.timestamp;
+        employeeSalary[msg.sender].unrealizedSalary = 0;
+
         if (isOfframp) {
             IBurn(token).burn(msg.sender, realizedSalary);
         } else {
@@ -293,14 +297,14 @@ contract Organization is ReentrancyGuard {
         for (uint256 i = 0; i < userEarn[_user].length; i++) {
             if (userEarn[_user][i].protocol == _protocol) {
                 userEarn[_user][i].shares += shares;
-                employeeSalary[_user].unrealizedSalary += (realizedSalary - _amount);
+                employeeSalary[_user].unrealizedSalary = (realizedSalary - _amount);
                 employeeSalary[_user].startStream = block.timestamp;
                 emit EarnSalary(_user, _protocol, _amount, shares);
                 return shares;
             }
         }
         userEarn[_user].push(Earn({protocol: _protocol, shares: shares, autoEarnAmount: 0, isAutoEarn: false}));
-        employeeSalary[_user].unrealizedSalary += (realizedSalary - _amount);
+        employeeSalary[_user].unrealizedSalary = (realizedSalary - _amount);
         employeeSalary[_user].startStream = block.timestamp;
         emit EarnSalary(_user, _protocol, _amount, shares);
         return shares;
@@ -326,6 +330,8 @@ contract Organization is ReentrancyGuard {
         } else {
             IERC20(token).safeTransfer(_user, amount);
         }
-        emit Withdraw(_user, amount, employeeSalary[_user].unrealizedSalary, isOfframp, employeeSalary[_user].startStream);
+        emit Withdraw(
+            _user, amount, employeeSalary[_user].unrealizedSalary, isOfframp, employeeSalary[_user].startStream
+        );
     }
 }

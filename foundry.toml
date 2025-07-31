@@ -2,6 +2,7 @@
 src = "src"
 out = "out"
 libs = ["lib"]
+remappings=[]
 
 [rpc_endpoints]
 etherlink_testnet="https://node.ghostnet.etherlink.com"

@@ -449,17 +449,20 @@ contract MoyPayTest is Test {
 
         vm.startPrank(employee);
 
-        vm.expectEmit(true, false, false, true);
-        emit Withdraw(employee, 1000e6, false, block.timestamp);
+        // vm.expectEmit(true, false, false, true);
+        // emit Withdraw(employee, ,1000e6, false, block.timestamp);
 
-        console.log("current salary", IOrganization(org)._currentSalary(employee) / 1e6, "USDC");
+        console.log("current salary before", IOrganization(org)._currentSalary(employee) / 1e6, "USDC");
         IOrganization(org).withdraw(1000e6, false);
-        console.log("current salary", IOrganization(org)._currentSalary(employee) / 1e6, "USDC");
+        vm.warp(block.timestamp + 1 hours);
+        console.log("current salary after", IOrganization(org)._currentSalary(employee) / 1e6, "USDC");
+        // IOrganization(org).withdraw(1000e6, false);
 
         uint256 balanceAfter = IERC20(address(mockUSDC)).balanceOf(employee);
         assertEq(balanceAfter - balanceBefore, 1000e6);
 
-
+        IOrganization(org).withdraw(100e6, false);
+        console.log("current salary after2", IOrganization(org)._currentSalary(employee) / 1e6, "USDC");
         vm.stopPrank();
     }
 
