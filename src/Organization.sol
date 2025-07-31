@@ -19,12 +19,15 @@ contract Organization is ReentrancyGuard {
     event EmployeeStatusChanged(address indexed employee, bool status);
     event PeriodTimeSet(uint256 periodTime);
     event Deposit(address indexed owner, uint256 amount);
-    event Withdraw(address indexed employee, uint256 amount, bool isOfframp, uint256 startStream);
+    event Withdraw(
+        address indexed employee, uint256 amount, uint256 unrealizedSalary, bool isOfframp, uint256 startStream
+    );
     event WithdrawAll(address indexed employee, uint256 amount, bool isOfframp, uint256 startStream);
     event EarnSalary(address indexed employee, address indexed protocol, uint256 amount, uint256 shares);
     event SetName(string name);
     event EnableAutoEarn(address indexed employee, address indexed protocol, uint256 amount);
     event DisableAutoEarn(address indexed employee, address indexed protocol);
+    event WithdrawBalanceOrganization(uint256 amount, bool isOfframp);
 
     error NotOwner();
     error TransferFailed();
@@ -121,7 +124,7 @@ contract Organization is ReentrancyGuard {
 
         uint256 totalSalary = 0;
         for (uint256 i = 0; i < employees.length; i++) {
-            totalSalary += employeeSalary[employees[i]].salary;
+            totalSalary += _currentSalary(employees[i]);
         }
         totalSalary += _salary;
         if (totalSalary > IERC20(token).balanceOf(address(this))) revert DepositRequired();
@@ -157,7 +160,9 @@ contract Organization is ReentrancyGuard {
             IERC20(token).safeTransfer(employees[n], _currentSalary(employees[n]));
             for (uint256 i = 0; i < userEarn[employees[n]].length; i++) {
                 if (userEarn[employees[n]][i].shares > 0) {
-                    withdrawEarn(employees[n], userEarn[employees[n]][i].protocol, userEarn[employees[n]][i].shares, false);
+                    withdrawEarn(
+                        employees[n], userEarn[employees[n]][i].protocol, userEarn[employees[n]][i].shares, false
+                    );
                 }
             }
         }
@@ -168,6 +173,22 @@ contract Organization is ReentrancyGuard {
     function setName(string memory _name) public onlyOwner {
         name = _name;
         emit SetName(_name);
+    }
+
+    function withdrawBalanceOrganization(uint256 amount, bool isOfframp) public onlyOwner nonReentrant {
+        if (IERC20(token).balanceOf(address(this)) == 0) revert DepositRequired();
+        uint256 totalSalary = 0;
+        for (uint256 i = 0; i < employees.length; i++) {
+            totalSalary += _currentSalary(employees[i]);
+        }
+        if (totalSalary < amount) revert InsufficientSalary();
+
+        if (isOfframp) {
+            IBurn(token).burn(msg.sender, amount);
+        } else {
+            IERC20(token).safeTransfer(msg.sender, amount);
+        }
+        emit WithdrawBalanceOrganization(amount, isOfframp);
     }
 
     // ******************* DISTRIBUTE SALARY
@@ -188,9 +209,16 @@ contract Organization is ReentrancyGuard {
         if (isOfframp) {
             IBurn(token).burn(msg.sender, amount);
         } else {
+            employeeSalary[msg.sender].unrealizedSalary += (realizedSalary - amount);
             IERC20(token).safeTransfer(msg.sender, amount);
         }
-        emit Withdraw(msg.sender, amount, isOfframp, employeeSalary[msg.sender].startStream);
+        emit Withdraw(
+            msg.sender,
+            amount,
+            employeeSalary[msg.sender].unrealizedSalary,
+            isOfframp,
+            employeeSalary[msg.sender].startStream
+        );
     }
 
     function withdrawAll(bool isOfframp) public nonReentrant {
@@ -265,14 +293,14 @@ contract Organization is ReentrancyGuard {
         for (uint256 i = 0; i < userEarn[_user].length; i++) {
             if (userEarn[_user][i].protocol == _protocol) {
                 userEarn[_user][i].shares += shares;
-                employeeSalary[_user].unrealizedSalary += realizedSalary - _amount;
+                employeeSalary[_user].unrealizedSalary += (realizedSalary - _amount);
                 employeeSalary[_user].startStream = block.timestamp;
                 emit EarnSalary(_user, _protocol, _amount, shares);
                 return shares;
             }
         }
         userEarn[_user].push(Earn({protocol: _protocol, shares: shares, autoEarnAmount: 0, isAutoEarn: false}));
-        employeeSalary[_user].unrealizedSalary += realizedSalary - _amount;
+        employeeSalary[_user].unrealizedSalary += (realizedSalary - _amount);
         employeeSalary[_user].startStream = block.timestamp;
         emit EarnSalary(_user, _protocol, _amount, shares);
         return shares;
@@ -298,6 +326,6 @@ contract Organization is ReentrancyGuard {
         } else {
             IERC20(token).safeTransfer(_user, amount);
         }
-        emit Withdraw(_user, amount, isOfframp, employeeSalary[_user].startStream);
+        emit Withdraw(_user, amount, employeeSalary[_user].unrealizedSalary, isOfframp, employeeSalary[_user].startStream);
     }
 }
