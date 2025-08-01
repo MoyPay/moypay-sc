@@ -4,7 +4,7 @@
 [![Solidity](https://img.shields.io/badge/Solidity-^0.8.20-green.svg)](https://soliditylang.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-MoyPay is a decentralized payroll management system that enables organizations to manage employee salaries, automate payments, and integrate with various DeFi earning protocols. Built on Ethereum with Foundry framework.
+MoyPay is a decentralized payroll management system that enables organizations to manage employee salaries, automate payments, and integrate with various DeFi earning protocols. Built on Etherlink with Foundry framework.
 
 ## 🚀 Features
 
