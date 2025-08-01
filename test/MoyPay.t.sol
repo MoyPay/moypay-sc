@@ -8,7 +8,7 @@ import {Organization} from "../src/Organization.sol";
 import {EarnStandard} from "../src/EarnStandard.sol";
 import {MockVault} from "../src/Mocks/MockVault.sol";
 import {MockUSDC} from "../src/Mocks/MockUSDC.sol";
-import {IOrganization} from "../src/intefaces/IOrganization.sol";
+import {IOrganization} from "../src/interfaces/IOrganization.sol";
 
 contract MoyPayTest is Test {
     MockUSDC public mockUSDC;
@@ -37,7 +37,7 @@ contract MoyPayTest is Test {
     event EmployeeStatusChanged(address indexed employee, bool status);
     event PeriodTimeSet(uint256 periodTime);
     event Deposit(address indexed owner, uint256 amount);
-    event Withdraw(address indexed employee, uint256 amount, bool isOfframp, uint256 startStream);
+    event Withdraw(address indexed employee, uint256 amount, uint256 unrealizedSalary, bool isOfframp, uint256 startStream);
     event WithdrawAll(address indexed employee, uint256 amount, bool isOfframp, uint256 startStream);
     event EarnSalary(address indexed employee, address indexed protocol, uint256 amount, uint256 shares);
     event SetName(string name);
@@ -463,6 +463,141 @@ contract MoyPayTest is Test {
 
         IOrganization(org).withdraw(100e6, false);
         console.log("current salary after2", IOrganization(org)._currentSalary(employee) / 1e6, "USDC");
+        vm.stopPrank();
+    }
+
+    function test_Organization_Withdraw_Offramp_True() public {
+        address org = helper_createOrganization();
+        helper_deposit(org, 10_000e6);
+        helper_addEmployee(org, "John", employee, 1000e6, block.timestamp, true);
+
+        // Warp 30 days to accumulate salary
+        vm.warp(block.timestamp + 30 days);
+
+        uint256 employeeBalanceBefore = IERC20(address(mockUSDC)).balanceOf(employee);
+        uint256 orgBalanceBefore = IERC20(address(mockUSDC)).balanceOf(org);
+        uint256 totalSupplyBefore = mockUSDC.totalSupply();
+
+        vm.startPrank(employee);
+
+        vm.expectEmit(true, false, false, true);
+        emit Withdraw(employee, 500e6, 500e6, true, block.timestamp);
+
+        IOrganization(org).withdraw(500e6, true);
+
+        uint256 employeeBalanceAfter = IERC20(address(mockUSDC)).balanceOf(employee);
+        uint256 orgBalanceAfter = IERC20(address(mockUSDC)).balanceOf(org);
+        uint256 totalSupplyAfter = mockUSDC.totalSupply();
+
+        // Employee balance should remain unchanged (tokens burned, not transferred)
+        assertEq(employeeBalanceAfter, employeeBalanceBefore);
+        
+        // Organization balance should decrease by withdrawn amount
+        assertEq(orgBalanceBefore - orgBalanceAfter, 500e6);
+        
+        // Total supply should decrease by withdrawn amount (tokens burned)
+        assertEq(totalSupplyBefore - totalSupplyAfter, 500e6);
+
+        vm.stopPrank();
+    }
+
+    function test_Organization_WithdrawAll_Offramp_True() public {
+        address org = helper_createOrganization();
+        helper_deposit(org, 10_000e6);
+        helper_addEmployee(org, "John", employee, 1000e6, block.timestamp, true);
+
+        // Warp 30 days to accumulate salary
+        vm.warp(block.timestamp + 30 days);
+
+        uint256 employeeBalanceBefore = IERC20(address(mockUSDC)).balanceOf(employee);
+        uint256 orgBalanceBefore = IERC20(address(mockUSDC)).balanceOf(org);
+        uint256 totalSupplyBefore = mockUSDC.totalSupply();
+        uint256 currentSalary = IOrganization(org)._currentSalary(employee);
+
+        vm.startPrank(employee);
+
+        vm.expectEmit(true, false, false, true);
+        emit WithdrawAll(employee, currentSalary, true, block.timestamp);
+
+        IOrganization(org).withdrawAll(true);
+
+        uint256 employeeBalanceAfter = IERC20(address(mockUSDC)).balanceOf(employee);
+        uint256 orgBalanceAfter = IERC20(address(mockUSDC)).balanceOf(org);
+        uint256 totalSupplyAfter = mockUSDC.totalSupply();
+
+        // Employee balance should remain unchanged (tokens burned, not transferred)
+        assertEq(employeeBalanceAfter, employeeBalanceBefore);
+        
+        // Organization balance should decrease by withdrawn amount
+        assertEq(orgBalanceBefore - orgBalanceAfter, currentSalary);
+        
+        // Total supply should decrease by withdrawn amount (tokens burned)
+        assertEq(totalSupplyBefore - totalSupplyAfter, currentSalary);
+
+        vm.stopPrank();
+    }
+
+    function test_Organization_Withdraw_Offramp_True_Revert_InsufficientSalary() public {
+        address org = helper_createOrganization();
+        helper_deposit(org, 10_000e6);
+        helper_addEmployee(org, "John", employee, 1000e6, block.timestamp, true);
+
+        // Warp only 15 days (0.5 period = 500e6 salary)
+        vm.warp(block.timestamp + 15 days);
+
+        vm.startPrank(employee);
+
+        // Should revert when trying to withdraw more than available salary, even with offramp
+        vm.expectRevert();
+        IOrganization(org).withdraw(1000e6, true);
+
+        vm.stopPrank();
+    }
+
+    function test_Organization_Withdraw_Offramp_True_Revert_EmployeeNotActive() public {
+        address org = helper_createOrganization();
+        helper_deposit(org, 10_000e6);
+        helper_addEmployee(org, "John", employee, 1000e6, block.timestamp, true);
+
+        vm.startPrank(boss);
+        IOrganization(org).setEmployeeStatus(employee, false);
+        vm.stopPrank();
+
+        vm.startPrank(employee);
+
+        // Should revert when employee is not active, even with offramp
+        vm.expectRevert();
+        IOrganization(org).withdraw(500e6, true);
+
+        vm.stopPrank();
+    }
+
+    function test_Organization_WithdrawEarn_Offramp_True() public {
+        address org = helper_createOrganization();
+        helper_deposit(org, 10_000e6);
+        helper_addEmployee(org, "John", employee, 1000e6, block.timestamp, true);
+        helper_earn(org, employee, address(mockVault), 500e6, 30 days);
+
+        uint256 employeeBalanceBefore = IERC20(address(mockUSDC)).balanceOf(employee);
+        uint256 totalSupplyBefore = mockUSDC.totalSupply();
+
+        vm.startPrank(employee);
+
+        // Get the shares to withdraw
+        (, uint256 shares) = IOrganization(org).userEarn(employee, 0);
+        uint256 sharesToWithdraw = shares / 2; // Withdraw half the shares
+
+        IOrganization(org).withdrawEarn(employee, address(mockVault), sharesToWithdraw, true);
+
+        uint256 employeeBalanceAfter = IERC20(address(mockUSDC)).balanceOf(employee);
+        uint256 totalSupplyAfter = mockUSDC.totalSupply();
+
+        // Employee balance should remain unchanged (tokens burned, not transferred)
+        assertEq(employeeBalanceAfter, employeeBalanceBefore);
+        
+        // Total supply should decrease (tokens burned)
+        assertLt(totalSupplyAfter, totalSupplyBefore);
+
         vm.stopPrank();
     }
 

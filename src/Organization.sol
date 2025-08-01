@@ -4,9 +4,9 @@ pragma solidity ^0.8.20;
 import {IERC20} from "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import {SafeERC20} from "@openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IEarnStandard} from "./intefaces/IEarnStandard.sol";
-import {IFactory} from "./intefaces/IFactory.sol";
-import {IBurn} from "./intefaces/IBurn.sol";
+import {IEarnStandard} from "./interfaces/IEarnStandard.sol";
+import {IFactory} from "./interfaces/IFactory.sol";
+import {IBurn} from "./interfaces/IBurn.sol";
 
 contract Organization is ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -38,6 +38,7 @@ contract Organization is ReentrancyGuard {
     error InsufficientShares();
     error EmployeeAlreadyAdded();
     error StartStreamInvalid();
+    error PeriodTimeInvalid();
 
     struct Employees {
         string name;
@@ -155,6 +156,7 @@ contract Organization is ReentrancyGuard {
     // TODO: REMOVE EMPLOYEE
 
     function setPeriodTime(uint256 _periodTime) public onlyOwner {
+        if (_periodTime < 1 days) revert PeriodTimeInvalid();
         for (uint256 n = 0; n < employees.length; n++) {
             if (_currentSalary(employees[n]) > IERC20(token).balanceOf(address(this))) revert DepositRequired();
             IERC20(token).safeTransfer(employees[n], _currentSalary(employees[n]));
@@ -176,15 +178,18 @@ contract Organization is ReentrancyGuard {
     }
 
     function withdrawBalanceOrganization(uint256 amount, bool isOfframp) public onlyOwner nonReentrant {
-        if (IERC20(token).balanceOf(address(this)) == 0) revert DepositRequired();
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        if (balance == 0) revert DepositRequired();
+
         uint256 totalSalary = 0;
         for (uint256 i = 0; i < employees.length; i++) {
             totalSalary += _currentSalary(employees[i]);
         }
-        if (totalSalary < amount) revert InsufficientSalary();
+
+        if (balance - amount < totalSalary) revert InsufficientSalary();
 
         if (isOfframp) {
-            IBurn(token).burn(msg.sender, amount);
+            IBurn(token).burn(address(this), amount);
         } else {
             IERC20(token).safeTransfer(msg.sender, amount);
         }
@@ -202,14 +207,14 @@ contract Organization is ReentrancyGuard {
         if (IERC20(token).balanceOf(address(this)) == 0) revert DepositRequired();
         if (!employeeSalary[msg.sender].status) revert EmployeeNotActive();
         uint256 realizedSalary = _currentSalary(msg.sender);
-        employeeSalary[msg.sender].startStream = block.timestamp;
         if (realizedSalary < amount) revert InsufficientSalary();
+        employeeSalary[msg.sender].startStream = block.timestamp;
         //******************/
 
         employeeSalary[msg.sender].unrealizedSalary = (realizedSalary - amount);
 
         if (isOfframp) {
-            IBurn(token).burn(msg.sender, amount);
+            IBurn(token).burn(address(this), amount);
         } else {
             IERC20(token).safeTransfer(msg.sender, amount);
         }
@@ -234,7 +239,7 @@ contract Organization is ReentrancyGuard {
         employeeSalary[msg.sender].unrealizedSalary = 0;
 
         if (isOfframp) {
-            IBurn(token).burn(msg.sender, realizedSalary);
+            IBurn(token).burn(address(this), realizedSalary);
         } else {
             IERC20(token).safeTransfer(msg.sender, realizedSalary);
         }
@@ -326,7 +331,7 @@ contract Organization is ReentrancyGuard {
         uint256 amount = IEarnStandard(earnStandard).withdrawEarn(_protocol, token, _user, _shares);
 
         if (isOfframp) {
-            IBurn(token).burn(_user, amount);
+            IBurn(token).burn(address(this), amount);
         } else {
             IERC20(token).safeTransfer(_user, amount);
         }
