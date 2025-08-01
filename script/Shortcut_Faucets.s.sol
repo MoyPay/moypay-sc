@@ -8,8 +8,10 @@ import {IERC20Metadata} from "@openzeppelin-contracts/contracts/token/ERC20/exte
 import {IMint} from "../src/interfaces/IMint.sol";
 
 contract ShortcutFaucets is Script, HelperScript {
+    // *** FILL THIS ***
     address public myWallet = vm.envAddress("ADDRESS");
     uint256 public amount = 100_000e18;
+    // *****************
 
     function setUp() public {
         vm.createSelectFork(vm.rpcUrl("etherlink_testnet"));
