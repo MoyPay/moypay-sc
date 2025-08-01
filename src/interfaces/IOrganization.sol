@@ -21,6 +21,7 @@ interface IOrganization {
     function setEmployeeStatus(address _employee, bool _status) external;
     function setPeriodTime(uint256 _periodTime) external;
     function setName(string memory _name) external;
+    function setEmployeeName(address _employee, string memory _name) external;
     function deposit(uint256 amount) external;
     function withdraw(uint256 amount, bool isOfframp) external;
     function withdrawAll(bool isOfframp) external;

@@ -25,6 +25,7 @@ contract Organization is ReentrancyGuard {
     event WithdrawAll(address indexed employee, uint256 amount, bool isOfframp, uint256 startStream);
     event EarnSalary(address indexed employee, address indexed protocol, uint256 amount, uint256 shares);
     event SetName(string name);
+    event SetEmployeeName(address indexed employee, string name);
     event EnableAutoEarn(address indexed employee, address indexed protocol, uint256 amount);
     event DisableAutoEarn(address indexed employee, address indexed protocol);
     event WithdrawBalanceOrganization(uint256 amount, bool isOfframp);
@@ -177,6 +178,12 @@ contract Organization is ReentrancyGuard {
         emit SetName(_name);
     }
 
+    function setEmployeeName(address _employee, string memory _name) public onlyOwner {
+        if (!employeeSalary[_employee].status) revert EmployeeNotActive();
+        employeeSalary[_employee].name = _name;
+        emit SetEmployeeName(_employee, _name);
+    }
+
     function withdrawBalanceOrganization(uint256 amount, bool isOfframp) public onlyOwner nonReentrant {
         uint256 balance = IERC20(token).balanceOf(address(this));
         if (balance == 0) revert DepositRequired();
@@ -261,6 +268,7 @@ contract Organization is ReentrancyGuard {
             if (userEarn[msg.sender][i].protocol == _protocol) {
                 userEarn[msg.sender][i].autoEarnAmount = _eachAmount;
                 userEarn[msg.sender][i].isAutoEarn = true;
+                emit EnableAutoEarn(msg.sender, _protocol, _eachAmount);
                 return;
             }
         }
