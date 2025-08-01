@@ -221,12 +221,4 @@ For questions and support:
 
 ---
 
-<<<<<<< Current (Your changes)
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
-=======
 **Built with ❤️ using Foundry**
->>>>>>> Incoming (Background Agent changes)
