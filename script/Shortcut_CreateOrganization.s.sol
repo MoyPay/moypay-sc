@@ -6,8 +6,6 @@ import {Script, console} from "forge-std/Script.sol";
 import {IERC20} from "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IFactory} from "../src/interfaces/IFactory.sol";
-import {Organization} from "../src/Organization.sol";
-import {IMint} from "../src/interfaces/IMint.sol";
 
 contract ShortcutCreateOrganization is Script, HelperScript {
     // *** FILL THIS ***
@@ -50,7 +48,7 @@ contract ShortcutCreateOrganization is Script, HelperScript {
         console.log("");
     }
 
-    function _checkStatus() internal {
+    function _checkStatus() internal view {
         console.log("4. Status Check...");
 
         uint256 ownerBalance = IERC20(mockUSDC).balanceOf(myWallet);

@@ -37,7 +37,9 @@ contract MoyPayTest is Test {
     event EmployeeStatusChanged(address indexed employee, bool status);
     event PeriodTimeSet(uint256 periodTime);
     event Deposit(address indexed owner, uint256 amount);
-    event Withdraw(address indexed employee, uint256 amount, uint256 unrealizedSalary, bool isOfframp, uint256 startStream);
+    event Withdraw(
+        address indexed employee, uint256 amount, uint256 unrealizedSalary, bool isOfframp, uint256 startStream
+    );
     event WithdrawAll(address indexed employee, uint256 amount, bool isOfframp, uint256 startStream);
     event EarnSalary(address indexed employee, address indexed protocol, uint256 amount, uint256 shares);
     event SetName(string name);
@@ -491,10 +493,10 @@ contract MoyPayTest is Test {
 
         // Employee balance should remain unchanged (tokens burned, not transferred)
         assertEq(employeeBalanceAfter, employeeBalanceBefore);
-        
+
         // Organization balance should decrease by withdrawn amount
         assertEq(orgBalanceBefore - orgBalanceAfter, 500e6);
-        
+
         // Total supply should decrease by withdrawn amount (tokens burned)
         assertEq(totalSupplyBefore - totalSupplyAfter, 500e6);
 
@@ -527,10 +529,10 @@ contract MoyPayTest is Test {
 
         // Employee balance should remain unchanged (tokens burned, not transferred)
         assertEq(employeeBalanceAfter, employeeBalanceBefore);
-        
+
         // Organization balance should decrease by withdrawn amount
         assertEq(orgBalanceBefore - orgBalanceAfter, currentSalary);
-        
+
         // Total supply should decrease by withdrawn amount (tokens burned)
         assertEq(totalSupplyBefore - totalSupplyAfter, currentSalary);
 
@@ -594,7 +596,7 @@ contract MoyPayTest is Test {
 
         // Employee balance should remain unchanged (tokens burned, not transferred)
         assertEq(employeeBalanceAfter, employeeBalanceBefore);
-        
+
         // Total supply should decrease (tokens burned)
         assertLt(totalSupplyAfter, totalSupplyBefore);
 
