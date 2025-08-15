@@ -14,7 +14,7 @@ contract ShortcutFaucets is Script, HelperScript {
     // *****************
 
     function setUp() public {
-        vm.createSelectFork(vm.rpcUrl("etherlink_testnet"));
+        vm.createSelectFork(vm.rpcUrl("core_testnet"));
     }
 
     function run() public {

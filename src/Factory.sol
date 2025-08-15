@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Organization} from "./Organization.sol";
+import {OrganizationDeployer} from "./OrganizationDeployer.sol";
 
 contract Factory {
     // Events
@@ -15,16 +15,18 @@ contract Factory {
     address public earnStandard;
     address[] public earnProtocol;
     mapping(address => bool) public isEarnProtocol;
+    OrganizationDeployer public organizationDeployer;
 
     constructor() {
         owner = msg.sender;
+        organizationDeployer = new OrganizationDeployer();
     }
 
     function createOrganization(address _token, string memory _name) public returns (address) {
-        Organization organization = new Organization(_token, address(this), msg.sender, _name);
-        organizations[msg.sender].push(address(organization));
-        emit OrganizationCreated(msg.sender, address(organization), _token, _name);
-        return address(organization);
+        address organization = organizationDeployer.deployOrganization(_token, address(this), msg.sender, _name);
+        organizations[msg.sender].push(organization);
+        emit OrganizationCreated(msg.sender, organization, _token, _name);
+        return organization;
     }
 
     function addEarnProtocol(address _earnProtocol) public {
@@ -48,5 +50,10 @@ contract Factory {
     function setEarnStandard(address _earnStandard) public {
         earnStandard = _earnStandard;
         emit EarnStandardSet(_earnStandard);
+    }
+
+    function setOrganizationDeployer(address _organizationDeployer) public {
+        require(msg.sender == owner, "Only owner can set deployer");
+        organizationDeployer = OrganizationDeployer(_organizationDeployer);
     }
 }

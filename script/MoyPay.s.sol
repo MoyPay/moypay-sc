@@ -2,28 +2,28 @@
 pragma solidity ^0.8.20;
 
 import {Script, console} from "forge-std/Script.sol";
-// import {MockUSDC} from "../src/Mocks/MockUSDC.sol";
+import {MockUSDC} from "../src/Mocks/MockUSDC.sol";
 import {Factory} from "../src/Factory.sol";
 import {Organization} from "../src/Organization.sol";
 import {EarnStandard} from "../src/EarnStandard.sol";
 import {MockVault} from "../src/Mocks/MockVault.sol";
 
 contract MoyPayScript is Script {
-    address public mockUSDC = 0x0440d45A296fBD5d41D5B37DEF75DE710177b819;
-    // MockUSDC public mockUSDC;
+    // address public mockUSDC = 0x0440d45A296fBD5d41D5B37DEF75DE710177b819;
+    MockUSDC public mockUSDC;
     Factory public factory;
     Organization public organization;
     EarnStandard public earnStandard;
     MockVault public mockVault;
 
     function setUp() public {
-        vm.createSelectFork(vm.rpcUrl("etherlink_testnet"));
+        vm.createSelectFork(vm.rpcUrl("core_testnet"));
     }
 
     function run() public {
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(privateKey);
-        // mockUSDC = new MockUSDC();
+        mockUSDC = new MockUSDC();
         console.log("export const mockUSDC = ", address(mockUSDC));
 
         factory = new Factory();
@@ -66,4 +66,5 @@ contract MoyPayScript is Script {
 
     // RUN
     // forge script MoyPayScript --broadcast -vvv --verify
+    // forge script MoyPayScript --verify --broadcast -vvv --with-gas-price 10000000000 --priority-gas-price 1000000000 --verifier blockscout --verifier-url https://api.test2.btcs.network/api --etherscan-api-key 005d2ba2cee04671bb4fa9b2061959e5
 }

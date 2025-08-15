@@ -5,7 +5,10 @@ libs = ["lib"]
 remappings = []
 
 [rpc_endpoints]
-etherlink_testnet="https://node.ghostnet.etherlink.com"
+core_testnet="https://rpc.test2.btcs.network"
+
+[etherscan]
+core_testnet = { key = "${CORESCAN_API_KEY}", url = "https://api.test2.btcs.network/api" }
 
 [lint]
 exclude_lints = ["mixed-case-variable", "mixed-case-function"]

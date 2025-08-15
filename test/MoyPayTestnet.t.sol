@@ -5,6 +5,6 @@ import {Test} from "forge-std/Test.sol";
 
 contract MoyPayTestnet is Test {
     function setUp() public {
-        vm.createSelectFork(vm.rpcUrl("etherlink_testnet"));
+        vm.createSelectFork(vm.rpcUrl("core_testnet"));
     }
 }

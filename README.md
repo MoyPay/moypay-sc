@@ -4,7 +4,7 @@
 [![Solidity](https://img.shields.io/badge/Solidity-^0.8.20-green.svg)](https://soliditylang.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-MoyPay is a decentralized payroll management system that enables organizations to manage employee salaries, automate payments, and integrate with various DeFi earning protocols. Built on Etherlink with Foundry framework.
+MoyPay is a decentralized payroll management system that enables organizations to manage employee salaries, automate payments, and integrate with various DeFi earning protocols. Built on Core with Foundry framework.
 
 ## 🚀 Features
 
@@ -126,7 +126,7 @@ forge test -vvv
 
 ## 🚀 Deployment
 
-### Etherlink Testnet Deployment
+### Core Testnet Deployment
 
 1. **Set environment variables**
    ```bash
@@ -136,7 +136,7 @@ forge test -vvv
 
 2. **Deploy contracts**
    ```bash
-   forge script script/MoyPay.s.sol:MoyPayScript --rpc-url https://node.ghostnet.etherlink.com --broadcast --verify
+   forge script script/MoyPay.s.sol:MoyPayScript --rpc-url https://rpc.test2.btcs.network --broadcast --verify
    ```
 
 ### Mainnet Deployment
@@ -178,7 +178,7 @@ forge script script/Shortcut_EmployeeManagement.s.sol:EmployeeManagementScript -
 The project uses Foundry with the following configuration:
 
 - **Solidity Version**: ^0.8.20
-- **RPC Endpoints**: Etherlink testnet configured
+- **RPC Endpoints**: Core testnet configured
 - **Linting**: Excludes mixed-case variable and function warnings
 
 ### Environment Variables
